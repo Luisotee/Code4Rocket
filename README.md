@@ -15,7 +15,7 @@ We are using other 3 Esp32 to communicate with the rocket, we want to fire the r
 
 We are aware that a LoRa would make it better and easier, but we already had the Esp32 and antennas. 
 
-## We are using the following itens:
+## Itens we are using
 
 ### Inside the rocket
 - Esp32
