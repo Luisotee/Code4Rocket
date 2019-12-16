@@ -39,7 +39,7 @@ void setup()
   InitializeSDCard();
   SDfile = SD.open("Data.txt", FILE_WRITE);
   SDfile.print("Altura Inicial = ");
-  SDfile.println(initialAltitude);  //PRINTA OS DADOS NO CARTAO SD
+  SDfile.println(String(initialAltitude));  //PRINTA OS DADOS NO CARTAO SD
   pinMode(BUTTON_PIN1, INPUT);
   pinMode(BUTTON_PIN2, INPUT);
   pinMode(MOTOR_PIN, OUTPUT);
@@ -51,23 +51,23 @@ void setup()
 
 void loop() 
 {
-  PrintInSerial();
+  PrintInSerial();  
   Serial.println("Flight Stage = " + String(flightStage));
   switch(flightStage)
   {
-    case GROUND:
+    case GROUND:  //Enquanto no chão
     if (currentAltitude - initialAltitude >= 10)
     {
       flightStage = FLYING;
       break;
-    }
+    } //Checa se começou a voar
     case FLYING:
     if (AmIFalling())
     {
       flightStage = DROPPING;
-    }
-    averageAccel();
-    highestAccel();
+    } //Checa se está caindo
+//    averageAccel();
+//    highestAccel();
     break;
     
     case DROPPING:
@@ -101,7 +101,6 @@ while(1)
     break;
 
     case LANDED:
-    APMode();
     break;
   }
 }
@@ -112,27 +111,27 @@ void InitializeSDCard()
 { 
   if (!SD.begin(5, 23, 19, 18))  //ATIVA O CARTAO SD NOS PINOS 5, 23, 19, 18
   {  
-    Serial.println("SD card nao esta respondendo!!");  //SE O SD NAO FOR INICIADO EXIBE A MENSAGEM
+    Serial.println("SD card nao esta respondendo!!");  
   }
   else
   {
-    Serial.println("SD card OK"); //SE O SD FOI INICIADO EXIBE A MENSAGEM
+    Serial.println("SD card OK"); 
   }
-  SDfile = SD.open("Data.txt", FILE_WRITE);  //ABRE O ARQUIVO "Data.txt"
+  SDfile = SD.open("Data.txt", FILE_WRITE);  //Abre aquivo Data.txt no SD
   if (SDfile) 
   { 
-    SDfile.println("Gravando no SD..."); //SE O ARQUIVO FOR ABERTO ELE EXIBE A MENSAGEM     
+    SDfile.println("Gravando no SD...");  
   }
   else 
   {
-    Serial.println("Erro ao abrir o arquivo!!");  //SE O ARQUIVO NAO FOR ABERTO ELE EXIBE A MENSAGEM    
+    Serial.println("Erro ao abrir o arquivo!!");  
   }
-}
+} //Inicializa o SD
 void InitializeGyroscope()
 {
-  MPU6050.begin();  //INICIA O MPU
-  MPU6050.calcGyroOffsets(true); //CALIBRA O MPU
-}
+  MPU6050.begin();  
+  MPU6050.calcGyroOffsets(true); 
+} //Inicia o MPU
 void InitializeAltimeter()
 {
   if (!BMP180.begin())
@@ -141,20 +140,20 @@ void InitializeAltimeter()
   }
   else
   {
-    Serial.println("BMP180 OK");  //SE O BMP180 FOR INICIADO EXIBE A MENSAGEM
+    Serial.println("BMP180 OK");  
   }
-}
+} //Inicia o BMP
 void GetDataGyroscope()
 {
   MPU6050.update();
-  xAccel = MPU6050.getAccX();  //ATRIBUI A INCLICANACAO X PARA A VARIAVEL "floatSensorInclinacaoX"
-  yAccel = MPU6050.getAccY();  //ATRIBUI A INCLICANACAO Y PARA A VARIAVEL "floatSensorInclinacaoY"
-  zAccel = MPU6050.getAccZ();  //ATRIBUI A INCLICANACAO Z PARA A VARIAVEL "floatSensorInclinacaoZ"
-}
+  xAccel = MPU6050.getAccX();  
+  yAccel = MPU6050.getAccY();  
+  zAccel = MPU6050.getAccZ();  
+} //Obtem dados do MPU
 void GetDataAltimeter()
 {
   currentAltitude = BMP180.readAltitude(102000) - initialAltitude;
-}
+} //Obtem dados do BMP
 //===================== ATUADORES =====================
 int Recovery() //FUNÇÕES DA RECUPERAÇÃO
 {
@@ -168,9 +167,13 @@ int Recovery() //FUNÇÕES DA RECUPERAÇÃO
       MyServo.write(pos);
       delay(15); 
     }
-    SDfile.print("\n\n Primeira parte do recovery acionado\n\n");
+    if (SDfile = SD.open("Data.txt", FILE_WRITE)) //ABRE O ARQUIVO "Data" NO CARTAO SD 
+    {
+      SDfile.print("\n\n Primeira parte do recovery acionado\n\n");
+      SDfile.close();
+    }
     delay(10000);
-  }
+  } //Primeira parte do recovery
   if (apogee <= 500)
   {
     if (!secondPart)
@@ -182,9 +185,13 @@ int Recovery() //FUNÇÕES DA RECUPERAÇÃO
       }while(digitalRead(BUTTON_PIN2) == LOW);
       digitalWrite(MOTOR_PIN, LOW);
     }
-    SDfile.print("\n\n Segunda parte do recovery acionado\n\n");
+    if (SDfile = SD.open("Data.txt", FILE_WRITE)) //ABRE O ARQUIVO "Data" NO CARTAO SD 
+    {
+      SDfile.print("\n\n Segunda parte do recovery acionado\n\n");
+      SDfile.close();
+    }
     return LANDED;
-  }
+  } //Acionar segunda parte do recovery se Apogeu foi menor que 500
   else
   {
     if (currentAltitude <= 500)
@@ -198,22 +205,26 @@ int Recovery() //FUNÇÕES DA RECUPERAÇÃO
         }while(digitalRead(BUTTON_PIN2) == LOW);
         digitalWrite(MOTOR_PIN, LOW);
       }
-      SDfile.print("\n\n Segunda parte do recovery acionado\n\n");
+      if (SDfile = SD.open("Data.txt", FILE_WRITE)) //ABRE O ARQUIVO "Data" NO CARTAO SD 
+      {
+        SDfile.print("\n\n Segunda parte do recovery acionado\n\n");
+        SDfile.close();
+      }
       return LANDED;
     }
   }
   return DROPPING;
-}
+} //Acionar segunda parte do recovery se Apogeu foi maior que 500
 
 //===================== LOGICA =====================
-void GetApogee()  //PEGAR VALOR DO APOGEU
+void GetApogee()  
 {
   if (currentAltitude > apogee)
   {
     apogee = currentAltitude;
   }
-}
-bool AmIFalling() //VERIFICAR SE ESTA CAINDO
+} //PEGA VALOR DO APOGEU
+bool AmIFalling() 
 {
   GetApogee();
   if (apogee - currentAltitude >= 5)
@@ -221,7 +232,7 @@ bool AmIFalling() //VERIFICAR SE ESTA CAINDO
     return true;
   }
   return false;
-}
+} //VERIFICAR SE ESTA CAINDO
 void highestAccel()
 {
   if (xAccel > peakAccel)
@@ -266,7 +277,7 @@ void PrintInSD()  //PRINTA NO SD
   bool startDropping = false;
   SDfile = SD.open("Data.txt", FILE_WRITE);   //ABRE O ARQUIVO "Data" NO CARTAO SD 
   SDfile.print("Tempo decorrido: ");
-  SDfile.println(Time());  //PRINTA OS DADOS NO CARTAO SD
+  SDfile.println(String(Time()));  //PRINTA OS DADOS NO CARTAO SD
   if (flightStage == DROPPING && !startDropping)
   {
     startDropping = true;
@@ -277,7 +288,7 @@ void PrintInSD()  //PRINTA NO SD
     SDfile.print("Apogeu : " + String(apogee));
   }
   SDfile.print("Altitude: ");           
-  SDfile.println(currentAltitude); 
+  SDfile.println(String(currentAltitude)); 
   SDfile.println("Aceleração maxima = " + String(peakAccel));
   SDfile.println("Aceleração media = " + String(avgAccel));
   SDfile.close();  
